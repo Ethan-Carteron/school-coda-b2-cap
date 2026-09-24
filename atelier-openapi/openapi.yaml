@@ -225,27 +225,153 @@ paths:
   #   Chaque ville du réseau possède une catapulte unique en son centre.
   #   Opération PUBLIQUE : on cherche sans être connecté.
 
+  /cities:
+    get:
+      tags: [Découverte]
+      operationId: getCities
+      summary: Lister les villes disponibles
+      description: |
+        Retourne la liste des villes disponibles.
+      security: []
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Filtre du nom de la ville.
+          schema:
+            type: string
+          example: mars
+        - name: limit
+          in: query
+          required: false
+          description: Nombre maximum de villes retournées
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Villes trouvées.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
   # POST /trips/search
   #   Rechercher les lancers reliant deux villes à une date donnée, pour un
   #   nombre de places. Tous les lancers sont directs : aucune correspondance,
   #   aucun itinéraire composé. Sans lancer direct ce jour-là, la liste est vide.
   #   Opération PUBLIQUE.
 
+  /trips/search:
+    post:
+      tags: [Découverte]
+      operationId: searchTrips
+      summary: Chercher des trajets
+      description: |
+        Recherche les lancers directs reliant deux villes à une date donnée.
+        Renvoie une liste vide si aucun lancer direct n'existe ce jour-là.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [startCity, endCity, date, passengers]
+              properties:
+                startCity:
+                  $ref: '#/components/schemas/City'
+                endCity:
+                  $ref: '#/components/schemas/City'
+                date:
+                  type: string
+                  format: date-time
+                  example: '2027-02-14T10:03:00Z'
+                passengers:
+                  type: integer
+                  minimum: 1
+                  example: 2
+      responses:
+        '200':
+          description: Trajets trouvés (liste vide si aucun résultat).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TripSummary'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
   # GET /trips/{id}
   #   Consulter le détail d'un lancer. Le détail porte ce qu'une liste de
   #   résultats n'a aucune raison de transporter pour chacune de ses lignes.
   #   Opération PUBLIQUE.
 
+  /trips/{id}:
+    get:
+      tags: [ Découverte ]
+      operationId: getTrip
+      summary: Consulter le détail d'un lancer
+      security: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Détail du lancer trouvé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripDetail'
+        '404': { $ref: '#/components/responses/NotFound' }
   # ---- Panier (authentifié) ------------------------------------------------
 
   # POST /carts
   #   Ouvrir un panier vide. C'est ici que la connexion devient nécessaire :
   #   la découverte est libre, la réservation est nominative.
+  /carts:
+    post:
+      tags: [ Panier ]
+      operationId: createCart
+      summary: Ouvrir un panier vide
+      responses:
+        '201':
+          description: Panier créé.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   # GET /carts
   #   Récupérer le panier actif du voyageur connecté. Un voyageur n'a qu'un
   #   panier actif à la fois — et parfois aucun, ce qui est un état normal
   #   et non une erreur. Réfléchissez à ce que ça implique pour la réponse.
+    get:
+      tags: [ Panier ]
+      operationId: getActiveCart
+      summary: Récupérer son panier actif
+      responses:
+        '200':
+          description: Panier actif du voyageur.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '204':
+          description: Aucun panier actif (état normal, sans résultat).
+        '401': { $ref: '#/components/responses/Unauthorized' }
 
   # POST /carts/{id}/items
   #   Ajouter un lancer au panier, avec un nombre de places.
@@ -496,20 +622,151 @@ components:
     #   Une ville desservie. Chaque ville possède une catapulte unique en son
     #   centre, qui sert à la fois de point de lancement et de réception.
 
+    City:
+      type: object
+      description: Ville disponible.
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+        name:
+          type: string
+          example: Dijon
+
     # TripSummary
     #   Un lancer tel qu'il apparaît dans une liste de résultats : de quoi
     #   choisir, pas de quoi préparer son voyage.
 
+    TripSummary:
+      type: object
+      description: Informations minimales des trajets.
+      required: [ id, startCity, endCity, launchDate, duration, price ]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+        startCity:
+          $ref: '#/components/schemas/City'
+          example:
+            id: 3f2a1b8c-5d4e-4f6a-9b8c-1d2e3f4a5b6c
+            name: Dijon
+        endCity:
+          $ref: '#/components/schemas/City'
+          example:
+            id: 9b8c7d6e-5f4a-3b2c-1d0e-9f8a7b6c5d4e
+            name: Paris
+        launchDate:
+          type: string
+          format: date-time
+          example: '2027-02-14T10:03:00Z'
+        duration:
+          type: integer
+          example: 45
+        price:
+          type: number
+          example: 18.00
+
     # TripDetail
     #   Le même lancer, consulté seul. Il ajoute ce dont on a besoin une fois
     #   qu'on l'a choisi — notamment la franchise de masse, qui n'est pas ici
-    #   une limite commerciale mais balistique.
+    #   une limite commerciale, mais balistique.
+
+    TripDetail:
+      description: Détail d'un lancer, enrichi des contraintes balistiques et d'embarquement.
+      allOf:
+        - $ref: '#/components/schemas/TripSummary'
+        - type: object
+          required: [massAllow, catapultModel, boardingInstructions]
+          properties:
+            massAllow:
+              type: integer
+              description: Franchise de masse par passager (en kg).
+              example: 15
+            catapultModel:
+              type: string
+              description: Nom de l'engin assurant le lancer.
+              example: Trébuchet MK-IV
+            boardingInstructions:
+              type: string
+              description: Consignes de sécurité avant le tir.
+              example: Présentation 15 min avant le tir au pied de la catapulte.
 
     # Cart
     #   Un panier de réservation. Il connaît son état, ses lignes, et son total.
 
+    Cart:
+      type: object
+      description: Panier d'achat du voyageur.
+      required: [id, status, items, total, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e
+        status:
+          type: string
+          enum: [pending, paid]
+          description: État du panier (en attente ou réglé).
+          example: pending
+        items:
+          type: array
+          description: Liste des lignes d'achats.
+          items:
+            $ref: '#/components/schemas/CartItem'
+        total:
+          type: number
+          description: Montant total calculé par l'Office en euros.
+          example: 36.00
+        createdAt:
+          type: string
+          format: date-time
+          example: '2027-02-14T10:03:00Z'
+
     # CartItem
     #   Une ligne de panier : un lancer et un nombre de places.
 
+    CartItem:
+      type: object
+      description: Ligne de panier représentant un lancer et le nombre de places réservées.
+      required: [id, trip, seats, subtotal]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f
+        trip:
+          $ref: '#/components/schemas/TripSummary'
+        seats:
+          type: integer
+          minimum: 1
+          description: Nombre de passagers/places réservées.
+          example: 2
+        subtotal:
+          type: number
+          description: Sous-total calculé pour cette ligne en euros.
+          example: 36.00
     # Ticket
     #   Un droit à embarquer sur un lancer, émis au paiement. Un par place.
+
+    Ticket:
+      type: object
+      description: Billet non nominatif valant droit à embarquer sur un lancer.
+      required: [id, trip, price, issuedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a
+        trip:
+          $ref: '#/components/schemas/TripSummary'
+        price:
+          type: number
+          description: Prix acquitté pour ce billet en euros.
+          example: 18.00
+        issuedAt:
+          type: string
+          format: date-time
+          example: '2027-02-14T10:03:00Z'

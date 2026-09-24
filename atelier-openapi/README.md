@@ -35,11 +35,11 @@ le YAML. Elle aussi se met à jour au rechargement de la page, sans redémarrage
 
 Tout se passe dans **`openapi.yaml`**. Il est découpé en deux :
 
-| Partie | État |
-|---|---|
-| Authentification et profil | **écrites** — vos modèles de référence |
-| Sécurité, format d'erreur | **posés** — à réutiliser (`$ref`), pas à redéfinir |
-| Le flux de réservation | **à vous** |
+| Partie                     | État                                               |
+|----------------------------|----------------------------------------------------|
+| Authentification et profil | **écrites** — vos modèles de référence             |
+| Sécurité, format d'erreur  | **posés** — à réutiliser (`$ref`), pas à redéfinir |
+| Le flux de réservation     | **à vous**                                         |
 
 Les opérations fournies ne sont pas là pour être recopiées. Elles sont là parce que
 tout ce dont vous avez besoin pour écrire le reste s'y trouve déjà au moins une fois :
@@ -57,14 +57,14 @@ L'extension **Spectral** (VSCode) lint votre contrat en direct. Le ruleset est f
 **Zéro erreur, toujours.** Une erreur de structure en cache souvent trois : corrigez au
 fur et à mesure plutôt qu'à la fin.
 
-Les **warnings**, eux, se lisent. Au démarrage vous en avez deux :
+Les **warnings**, eux, se lisent. Au démarrage, vous en avez deux :
 
 ```
 warning  oas3-unused-component  ...  components.responses.Forbidden
 warning  oas3-unused-component  ...  components.responses.NotFound
 ```
 
-Spectral vous dit que deux réponses d'erreur sont définies mais que personne ne s'en
+Spectral vous dit que deux réponses d'erreur sont définies, mais que personne ne s'en
 sert. C'est exact : aucune des opérations fournies n'en a besoin. Ces deux warnings
 sont donc votre todo-list — ils s'éteindront d'eux-mêmes quand vous aurez écrit les
 opérations qui accèdent à une ressource pouvant être introuvable, ou appartenir à
@@ -83,3 +83,15 @@ Vous pouvez importer `openapi.yaml` dans Bruno pour générer votre collection :
 requêtes viennent de votre propre contrat.
 
 N'écrivez pas les douze opérations avant de tester la première.
+
+## Déclaration d'utilisation de l'IA
+
+Dans le cadre de cet atelier, j'ai utilisé une IA pour m'accompagner dans la compréhension technique et la validation de ma syntaxe OpenAPI, dans une démarche d'apprentissage pas à pas.
+
+Voici le détail de mon utilisation :
+
+* **Mise en route et environnement :** Explication en début d'atelier du rôle exact de Prism (mock sur le port 4010) et Swagger UI (port 4011).
+* **Apprentissage de la syntaxe OpenAPI :** Explication de la structure d'un contrat (`paths` vs `components`), de la bonne utilisation des `$ref`, et compréhension de la composition de schémas via le mot-clé `allOf` (utilisé pour construire `TripDetail` à partir de `TripSummary`).
+* **Relecture et correction de schémas :** L'IA a relu mes premières modélisations (`City`, `TripSummary`) pour m'aider à corriger des erreurs de typage (choix des types primitifs `integer` pour la durée et `number` pour les montants au lieu de `string`).
+* **Traduction du contrat métier (Codes de statut) :** Échange pour déterminer le bon code HTTP à renvoyer selon les situations métier (par exemple, comprendre pourquoi une recherche sans résultat doit renvoyer un statut `200` avec un tableau vide et non une erreur `404`).
+* **Conformité des patterns :** Validation finale pour s'assurer que je respectais strictement les entités exigées par le barème, en conservant des objets définis directement dans les routes (inline) pour les corps de requêtes qui ne nécessitaient pas de schémas réutilisables.

@@ -11,11 +11,12 @@ Une entrée par quête. Trois lignes chacune, écrites avec mes mots.
 ## 1 — Day 1: Inventory Check
 
 **La situation** :
+Il faut lister tous les items qui commencent par B.
 
 **La commande** :
 
 ```bash
-
+curl GET http://localhost:8080/inventory
 ```
 
 **Le piège** :

@@ -1,0 +1,23 @@
+info:
+  name: cities
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/cities?q=dij&limit=10"
+  params:
+    - name: q
+      value: dij
+      type: query
+    - name: limit
+      value: "10"
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

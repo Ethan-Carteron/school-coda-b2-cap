@@ -1,0 +1,5 @@
+name: testApiEnvironnement
+variables:
+  - secret: true
+    name: Bearer
+    description: ""
